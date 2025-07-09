@@ -208,13 +208,13 @@ export async function GET(
   const targetUrl = `https://scrennnifu.click/${path}`;
   const isM3U8 = targetUrl.endsWith(".m3u8");
 
-  // 🔐 Allow only requests from https://zxcstream.pro
-  const referer = req.headers.get("referer") || "";
-  const allowedReferrer = "https://zxcstream.pro";
+  // ✅ ORIGIN CHECK
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigins = ["https://zxcstream.pro", "https://www.zxcstream.pro"];
 
-  if (!referer.startsWith(allowedReferrer)) {
-    console.warn("❌ Blocked request from invalid referer:", referer);
-    return new Response("Forbidden: Invalid Referer", { status: 403 });
+  if (!allowedOrigins.includes(origin)) {
+    console.warn("❌ Blocked by origin check:", origin);
+    return new Response("Forbidden: Invalid Origin", { status: 403 });
   }
 
   console.log("✅ Proxying request to:", targetUrl);
@@ -238,7 +238,7 @@ export async function GET(
         status: 200,
         headers: {
           "Content-Type": "application/vnd.apple.mpegurl",
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": origin,
         },
       });
     }
@@ -259,7 +259,7 @@ export async function GET(
       headers: {
         "Content-Type":
           response.headers["content-type"] || "application/octet-stream",
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": origin,
       },
     });
   } catch (err: unknown) {
