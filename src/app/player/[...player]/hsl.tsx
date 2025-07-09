@@ -1,6 +1,25 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Hls from "hls.js";
+import Hls, { Level } from "hls.js";
+type SubtitleTrack = {
+  id: number;
+  name: string;
+  lang?: string;
+  type: string;
+  url: string;
+  default?: boolean;
+  forced?: boolean;
+  autoselect?: boolean;
+};
+type AudioTrack = {
+  id: number;
+  name: string;
+  lang?: string;
+  groupId: string;
+  default: boolean;
+  autoselect: boolean;
+  forced: boolean;
+};
 import {
   Maximize,
   Minimize,
@@ -38,9 +57,9 @@ export default function HslPlayer({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState("");
   const [hlsInstance, setHlsInstance] = useState<Hls | null>(null);
-  const [levels, setLevels] = useState<any[]>([]);
-  const [subtitles, setSubtitles] = useState<any[]>([]);
-  const [audioTracks, setAudioTracks] = useState<any[]>([]);
+  const [levels, setLevels] = useState<Level[]>([]);
+  const [subtitles, setSubtitles] = useState<SubtitleTrack[]>([]);
+  const [audioTracks, setAudioTracks] = useState<AudioTrack[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<number>(-1);
   const [selectedSubtitle, setSelectedSubtitle] = useState<number>(-1);
   const [selectedAudio, setSelectedAudio] = useState<number>(0);
