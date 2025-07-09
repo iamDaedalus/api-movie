@@ -117,15 +117,12 @@ export const runtime = "nodejs";
 
 export async function GET(
   req: NextRequest,
-  {
-    params,
-  }: {
-    params: {
-      stream: string[];
-    };
-  }
+  { params }: { params: Promise<{ stream: string[] }> }
 ) {
-  const path = params.stream.join("/");
+  // Await the params since they're now a Promise
+  const resolvedParams = await params;
+  const path = resolvedParams.stream.join("/");
+
   if (!path) return new Response("Missing path", { status: 400 });
 
   const targetUrl = `https://scrennnifu.click/${path}`;
@@ -142,7 +139,7 @@ export async function GET(
     });
 
     if (isM3U8) {
-      const basePath = `/api/${params.stream.slice(0, -1).join("/")}`;
+      const basePath = `/api/${resolvedParams.stream.slice(0, -1).join("/")}`;
       const rewritten = response.data.replace(
         /^(?!#)(.*\.(m3u8|ts|m4s|vtt))$/gm,
         (match: string) => `${basePath}/${match}`
