@@ -348,12 +348,10 @@ export default function HslPlayer({
       {isStreamUnavailable && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-30">
           <div className="text-center max-w-md mx-auto p-6">
-            <h2 className="text-white text-2xl font-bold mb-2">
+            <h2 className="text-white text-xl font-bold mb-2">
               Media Not Found
             </h2>
-            <p className="text-gray-300 text-lg mb-4">
-              The media could not be loaded or is currently unavailable.
-            </p>
+         
             <p className="text-gray-400 text-sm">
               Please change server to continue watching.
             </p>
