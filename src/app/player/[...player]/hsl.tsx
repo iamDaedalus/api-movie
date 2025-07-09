@@ -30,6 +30,8 @@ import {
   UndoDot,
   Volume2,
   VolumeX,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
@@ -56,6 +58,7 @@ export default function HslPlayer({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState("");
+  const [isStreamUnavailable, setIsStreamUnavailable] = useState(false);
   const [hlsInstance, setHlsInstance] = useState<Hls | null>(null);
   const [levels, setLevels] = useState<Level[]>([]);
   const [subtitles, setSubtitles] = useState<SubtitleTrack[]>([]);
@@ -74,19 +77,47 @@ export default function HslPlayer({
   const [showControls, setShowControls] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   let controlsTimeout: NodeJS.Timeout;
-  console.log(error);
+
   useEffect(() => {
     const fetchStream = async () => {
       try {
+        setIsLoading(true);
+        setError("");
+        setIsStreamUnavailable(false);
+
         if (m3u8link && videoRef.current) {
           if (Hls.isSupported()) {
             const hls = new Hls();
+
+            // Add error handling for HLS
+            hls.on(Hls.Events.ERROR, (event, data) => {
+              console.error("HLS Error:", data);
+              if (data.fatal) {
+                switch (data.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    setError("Network error occurred");
+                    setIsStreamUnavailable(true);
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
+                    setError("Media error occurred");
+                    setIsStreamUnavailable(true);
+                    break;
+                  default:
+                    setError("An error occurred while loading the stream");
+                    setIsStreamUnavailable(true);
+                    break;
+                }
+              }
+            });
+
             hls.loadSource(m3u8link);
             hls.attachMedia(videoRef.current);
 
             hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
               setLevels(data.levels);
+              setIsLoading(false);
             });
 
             hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, (_, data) => {
@@ -102,13 +133,25 @@ export default function HslPlayer({
             videoRef.current.canPlayType("application/vnd.apple.mpegurl")
           ) {
             videoRef.current.src = m3u8link;
+            videoRef.current.addEventListener("loadedmetadata", () => {
+              setIsLoading(false);
+            });
+            videoRef.current.addEventListener("error", () => {
+              setError("Failed to load video stream");
+              setIsStreamUnavailable(true);
+              setIsLoading(false);
+            });
           }
         } else {
           setError("No video found.");
+          setIsStreamUnavailable(true);
+          setIsLoading(false);
         }
       } catch (err) {
         console.error("Error loading stream:", err);
         setError("Failed to load video.");
+        setIsStreamUnavailable(true);
+        setIsLoading(false);
       }
     };
 
@@ -135,6 +178,7 @@ export default function HslPlayer({
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
+      setIsLoading(false);
     };
 
     const handleTimeUpdate = () => {
@@ -158,12 +202,19 @@ export default function HslPlayer({
       setIsBuffering(false);
     };
 
+    const handleError = () => {
+      setError("Video playback error");
+      setIsStreamUnavailable(true);
+      setIsLoading(false);
+    };
+
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
     video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("play", handlePlay);
     video.addEventListener("pause", handlePause);
     video.addEventListener("waiting", handleWaiting);
     video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("error", handleError);
 
     return () => {
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
@@ -172,8 +223,10 @@ export default function HslPlayer({
       video.removeEventListener("pause", handlePause);
       video.removeEventListener("waiting", handleWaiting);
       video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("error", handleError);
     };
   }, []);
+
   // Auto-hide controls
   useEffect(() => {
     const handleMouseMove = () => {
@@ -247,13 +300,35 @@ export default function HslPlayer({
       );
     }
   };
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+  const handleRetry = () => {
+    setError("");
+    setIsStreamUnavailable(false);
+    setIsLoading(true);
+
+    // Trigger re-fetch by updating the effect dependency
+    if (hlsInstance) {
+      hlsInstance.destroy();
+      setHlsInstance(null);
+    }
+
+    // Reset video element
+    if (videoRef.current) {
+      videoRef.current.src = "";
+      videoRef.current.load();
+    }
+
+    // The useEffect will re-run due to the state changes
+  };
+
   const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
+
   // Handle container click (but not when clicking on controls)
   const handleContainerClick = (e: React.MouseEvent) => {
     // Only toggle play if clicking on the video itself or empty space
@@ -265,7 +340,7 @@ export default function HslPlayer({
   const posterUrl = data.backdrop_path
     ? `https://image.tmdb.org/t/p/original/${data.backdrop_path}`
     : undefined;
-  console.log(posterUrl);
+
   return (
     <div
       ref={containerRef}
@@ -280,15 +355,53 @@ export default function HslPlayer({
         autoPlay
       />
 
+      {/* Loading Indicator */}
+      {isLoading && !isStreamUnavailable && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-lg">Loading stream...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Stream Unavailable Fallback */}
+      {isStreamUnavailable && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-30">
+          <div className="text-center max-w-md mx-auto p-6">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-white text-2xl font-bold mb-2">
+              Stream Unavailable
+            </h2>
+            <p className="text-gray-300 text-lg mb-6">
+              The current server is not responding. Please switch to another
+              server to continue watching.
+            </p>
+            <div className="space-y-4">
+              <button
+                onClick={handleRetry}
+                className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors mx-auto"
+              >
+                <RefreshCw className="w-5 h-5" />
+                <span>Retry Current Server</span>
+              </button>
+              <p className="text-gray-400 text-sm">
+                or switch to a different server from the server list
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Buffering Indicator */}
-      {isBuffering && (
+      {isBuffering && !isStreamUnavailable && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/30 bg-opacity-50 z-30 pointer-events-none">
           <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
 
       {/* Main Controls Overlay */}
-      {showControls && (
+      {showControls && !isStreamUnavailable && (
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/50 z-10 pointer-events-none">
           {/* Top Bar */}
           <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center pointer-events-auto">
@@ -407,7 +520,9 @@ export default function HslPlayer({
           </div>
         </div>
       )}
-      {showSettings && (
+
+      {/* Settings Panel */}
+      {showSettings && !isStreamUnavailable && (
         <div className="absolute top-16 right-6 bg-black/90 backdrop-blur-sm rounded-lg p-5 w-80 space-y-5 z-40">
           {/* Quality Settings */}
           {levels.length > 0 && (
