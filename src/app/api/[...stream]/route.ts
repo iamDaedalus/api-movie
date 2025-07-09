@@ -109,6 +109,87 @@
 //   }
 // }
 
+// import { NextRequest } from "next/server";
+// import { Readable } from "stream";
+// import axios, { AxiosError } from "axios";
+
+// export const runtime = "nodejs";
+
+// export async function GET(
+//   req: NextRequest,
+//   { params }: { params: Promise<{ stream: string[] }> }
+// ) {
+//   // Await the params since they're now a Promise
+//   const resolvedParams = await params;
+//   const path = resolvedParams.stream.join("/");
+
+//   if (!path) return new Response("Missing path", { status: 400 });
+
+//   const targetUrl = `https://scrennnifu.click/${path}`;
+//   const isM3U8 = targetUrl.endsWith(".m3u8");
+
+//   console.log("Proxying request to:", targetUrl); // ✅ Log for debug
+
+//   try {
+//     const response = await axios.get(targetUrl, {
+//       responseType: isM3U8 ? "text" : "stream",
+//       headers: {
+//         "User-Agent": req.headers.get("user-agent") || "",
+//       },
+//     });
+
+//     if (isM3U8) {
+//       const basePath = `/api/${resolvedParams.stream.slice(0, -1).join("/")}`;
+//       const rewritten = response.data.replace(
+//         /^(?!#)(.*\.(m3u8|ts|m4s|vtt))$/gm,
+//         (match: string) => `${basePath}/${match}`
+//       );
+
+//       return new Response(rewritten, {
+//         status: 200,
+//         headers: {
+//           "Content-Type": "application/vnd.apple.mpegurl",
+//           "Access-Control-Allow-Origin": "*",
+//         },
+//       });
+//     }
+
+//     // Convert Node.js stream to Web API ReadableStream
+//     const nodeStream = response.data as Readable;
+//     const webStream = new ReadableStream({
+//       start(controller) {
+//         nodeStream.on("data", (chunk: Buffer) => {
+//           controller.enqueue(new Uint8Array(chunk));
+//         });
+
+//         nodeStream.on("end", () => {
+//           controller.close();
+//         });
+
+//         nodeStream.on("error", (error) => {
+//           controller.error(error);
+//         });
+//       },
+//     });
+
+//     return new Response(webStream, {
+//       status: 200,
+//       headers: {
+//         "Content-Type":
+//           response.headers["content-type"] || "application/octet-stream",
+//         "Access-Control-Allow-Origin": "*",
+//       },
+//     });
+//   } catch (err: unknown) {
+//     const error = err as AxiosError;
+//     console.error("❌ Proxy error:", error.message);
+//     if (error.response) {
+//       console.error("❗ Response status:", error.response.status);
+//       console.error("❗ Response data:", error.response.data);
+//     }
+//     return new Response("Proxy fetch failed", { status: 500 });
+//   }
+// }
 import { NextRequest } from "next/server";
 import { Readable } from "stream";
 import axios, { AxiosError } from "axios";
@@ -119,7 +200,6 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ stream: string[] }> }
 ) {
-  // Await the params since they're now a Promise
   const resolvedParams = await params;
   const path = resolvedParams.stream.join("/");
 
@@ -128,7 +208,16 @@ export async function GET(
   const targetUrl = `https://scrennnifu.click/${path}`;
   const isM3U8 = targetUrl.endsWith(".m3u8");
 
-  console.log("Proxying request to:", targetUrl); // ✅ Log for debug
+  // 🔐 Allow only requests from https://zxcstream.pro
+  const referer = req.headers.get("referer") || "";
+  const allowedReferrer = "https://zxcstream.pro";
+
+  if (!referer.startsWith(allowedReferrer)) {
+    console.warn("❌ Blocked request from invalid referer:", referer);
+    return new Response("Forbidden: Invalid Referer", { status: 403 });
+  }
+
+  console.log("✅ Proxying request to:", targetUrl);
 
   try {
     const response = await axios.get(targetUrl, {
@@ -154,21 +243,14 @@ export async function GET(
       });
     }
 
-    // Convert Node.js stream to Web API ReadableStream
     const nodeStream = response.data as Readable;
     const webStream = new ReadableStream({
       start(controller) {
         nodeStream.on("data", (chunk: Buffer) => {
           controller.enqueue(new Uint8Array(chunk));
         });
-
-        nodeStream.on("end", () => {
-          controller.close();
-        });
-
-        nodeStream.on("error", (error) => {
-          controller.error(error);
-        });
+        nodeStream.on("end", () => controller.close());
+        nodeStream.on("error", (error) => controller.error(error));
       },
     });
 
