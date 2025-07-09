@@ -210,7 +210,12 @@ export async function GET(
 
   // ✅ ORIGIN CHECK
   const origin = req.headers.get("origin") || "";
-  const allowedOrigins = ["https://zxcstream.pro", "https://www.zxcstream.pro"];
+  const allowedOrigins = [
+    "https://zxcstream.pro",
+    "https://www.zxcstream.pro",
+    "https://zxcstream-api.vercel.app", 
+  ];
+  
 
   if (!allowedOrigins.includes(origin)) {
     console.warn("❌ Blocked by origin check:", origin);
