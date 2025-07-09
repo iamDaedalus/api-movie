@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import Hls from "hls.js";
 
-type MediaData = {
+export type MediaData = {
   id: number;
   title?: string;
   name?: string;

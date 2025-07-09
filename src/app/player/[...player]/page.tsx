@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import HslPlayer from "./hsl";
+import { MediaData } from "./hsl";
 
 export default function PlayerPage() {
   const params = useParams();
@@ -10,7 +11,7 @@ export default function PlayerPage() {
   const season = params?.player?.[2];
   const episode = params?.player?.[3];
 
-  const [show, setShow] = useState<any>(null);
+  const [show, setShow] = useState<MediaData | null>(null);
   const [m3u8Url, setM3u8Url] = useState("");
   const apiKey = "47a1a7df542d3d483227f758a7317dff";
 
