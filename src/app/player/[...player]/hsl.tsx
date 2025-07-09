@@ -360,7 +360,7 @@ export default function HslPlayer({
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-30">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white text-lg">Loading stream...</p>
+            <p className="text-white text-lg">Loading media...</p>
           </div>
         </div>
       )}
@@ -369,26 +369,15 @@ export default function HslPlayer({
       {isStreamUnavailable && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-30">
           <div className="text-center max-w-md mx-auto p-6">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-white text-2xl font-bold mb-2">
-              Stream Unavailable
+              Media Not Found
             </h2>
-            <p className="text-gray-300 text-lg mb-6">
-              The current server is not responding. Please switch to another
-              server to continue watching.
+            <p className="text-gray-300 text-lg mb-4">
+              The media could not be loaded or is currently unavailable.
             </p>
-            <div className="space-y-4">
-              <button
-                onClick={handleRetry}
-                className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors mx-auto"
-              >
-                <RefreshCw className="w-5 h-5" />
-                <span>Retry Current Server</span>
-              </button>
-              <p className="text-gray-400 text-sm">
-                or switch to a different server from the server list
-              </p>
-            </div>
+            <p className="text-gray-400 text-sm">
+              Please change server to continue watching.
+            </p>
           </div>
         </div>
       )}
