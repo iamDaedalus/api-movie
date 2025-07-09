@@ -276,7 +276,7 @@ export default function HslPlayer({
       <video
         ref={videoRef}
         poster={posterUrl}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain bg-black"
         autoPlay
       />
 
