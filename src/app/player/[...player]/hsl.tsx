@@ -79,7 +79,7 @@ export default function HslPlayer({
   const [isBuffering, setIsBuffering] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   let controlsTimeout: NodeJS.Timeout;
-
+  console.log(error);
   useEffect(() => {
     const fetchStream = async () => {
       try {
