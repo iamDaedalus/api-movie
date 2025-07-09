@@ -30,8 +30,6 @@ import {
   UndoDot,
   Volume2,
   VolumeX,
-  RefreshCw,
-  AlertCircle,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
@@ -307,25 +305,6 @@ export default function HslPlayer({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const handleRetry = () => {
-    setError("");
-    setIsStreamUnavailable(false);
-    setIsLoading(true);
-
-    // Trigger re-fetch by updating the effect dependency
-    if (hlsInstance) {
-      hlsInstance.destroy();
-      setHlsInstance(null);
-    }
-
-    // Reset video element
-    if (videoRef.current) {
-      videoRef.current.src = "";
-      videoRef.current.load();
-    }
-
-    // The useEffect will re-run due to the state changes
-  };
 
   const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
 
