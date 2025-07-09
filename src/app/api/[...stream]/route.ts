@@ -208,18 +208,22 @@ export async function GET(
   const targetUrl = `https://scrennnifu.click/${path}`;
   const isM3U8 = targetUrl.endsWith(".m3u8");
 
-  // ✅ ORIGIN CHECK
+  // ✅ Secure Origin/Referer Check
   const origin = req.headers.get("origin") || "";
-  const allowedOrigins = [
+  const referer = req.headers.get("referer") || "";
+
+  const allowed = [
     "https://zxcstream.pro",
     "https://www.zxcstream.pro",
-    "https://zxcstream-api.vercel.app", 
+    "https://zxcstream-api.vercel.app",
   ];
-  
 
-  if (!allowedOrigins.includes(origin)) {
-    console.warn("❌ Blocked by origin check:", origin);
-    return new Response("Forbidden: Invalid Origin", { status: 403 });
+  const isValidOrigin = allowed.some((url) => origin === url);
+  const isValidReferer = allowed.some((url) => referer.startsWith(url));
+
+  if (!isValidOrigin && !isValidReferer) {
+    console.warn("❌ Blocked request | Origin:", origin, "| Referer:", referer);
+    return new Response("Forbidden: Invalid Origin/Referer", { status: 403 });
   }
 
   console.log("✅ Proxying request to:", targetUrl);
@@ -243,7 +247,7 @@ export async function GET(
         status: 200,
         headers: {
           "Content-Type": "application/vnd.apple.mpegurl",
-          "Access-Control-Allow-Origin": origin,
+          "Access-Control-Allow-Origin": "*",
         },
       });
     }
@@ -264,7 +268,7 @@ export async function GET(
       headers: {
         "Content-Type":
           response.headers["content-type"] || "application/octet-stream",
-        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (err: unknown) {
