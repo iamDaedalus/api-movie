@@ -216,7 +216,7 @@ export async function GET(
     "https://zxcstream.pro",
     "https://www.zxcstream.pro",
     "https://zxcstream-api.vercel.app",
-    "https://zxcstream-api-six.vercel.app",
+   
   ];
   
 
