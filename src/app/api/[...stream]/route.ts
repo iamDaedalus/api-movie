@@ -216,7 +216,9 @@ export async function GET(
     "https://zxcstream.pro",
     "https://www.zxcstream.pro",
     "https://zxcstream-api.vercel.app",
+    "https://zxcstream-api-six.vercel.app",
   ];
+  
 
   const isValidOrigin = allowed.some((url) => origin === url);
   const isValidReferer = allowed.some((url) => referer.startsWith(url));
