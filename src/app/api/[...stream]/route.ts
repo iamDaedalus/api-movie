@@ -214,6 +214,8 @@ export async function GET(
 
   const allowed = [
     "https://zxcstream-api-production.up.railway.app",
+    "http://localhost:3001/",
+    "https://api-movie-tau.vercel.app/",
   ];
 
   const isValidOrigin = allowed.some((url) => origin === url);
@@ -234,11 +236,35 @@ export async function GET(
       },
     });
 
+    // if (isM3U8) {
+    //   const basePath = `/api/${resolvedParams.stream.slice(0, -1).join("/")}`;
+    //   const rewritten = response.data.replace(
+    //     /^(?!#)(.*\.(m3u8|ts|m4s|vtt))$/gm,
+    //     (match: string) => `${basePath}/${match}`
+    //   );
+
+    //   return new Response(rewritten, {
+    //     status: 200,
+    //     headers: {
+    //       "Content-Type": "application/vnd.apple.mpegurl",
+    //       "Access-Control-Allow-Origin": "*",
+    //     },
+    //   });
+    // }
+
     if (isM3U8) {
-      const basePath = `/api/${resolvedParams.stream.slice(0, -1).join("/")}`;
+      const baseSourceUrl = targetUrl.substring(
+        0,
+        targetUrl.lastIndexOf("/") + 1
+      );
+
       const rewritten = response.data.replace(
-        /^(?!#)(.*\.(m3u8|ts|m4s|vtt))$/gm,
-        (match: string) => `${basePath}/${match}`
+        /^(?!#)(.*\.(ts|m4s|vtt))$/gm,
+        (segment: string) => {
+          const realUrl = baseSourceUrl + segment;
+          const encoded = Buffer.from(realUrl).toString("base64url");
+          return `https://cdn.zxcstream.com/ts/${encoded}`;
+        }
       );
 
       return new Response(rewritten, {
