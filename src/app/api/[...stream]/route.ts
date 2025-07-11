@@ -213,12 +213,8 @@ export async function GET(
   const referer = req.headers.get("referer") || "";
 
   const allowed = [
-    "https://zxcstream.pro",
-    "https://www.zxcstream.pro",
-    "https://zxcstream-api.vercel.app",
-    "https://zxcstream-api-six.vercel.app",
+    "https://zxcstream-api-production.up.railway.app",
   ];
-  
 
   const isValidOrigin = allowed.some((url) => origin === url);
   const isValidReferer = allowed.some((url) => referer.startsWith(url));
