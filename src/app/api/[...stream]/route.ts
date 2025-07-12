@@ -23,7 +23,8 @@ export async function GET(
   const referer = req.headers.get("referer") || "";
 
   const allowed = [
-    "https://zxcstream-api-production.up.railway.app", "http://localhost:3001/api/movie/34234"
+    "https://api-movie-tau.vercel.app/",
+    "http://localhost:3001",
   ];
 
   const isValidOrigin = allowed.some((url) => origin === url);
